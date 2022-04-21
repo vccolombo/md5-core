@@ -56,7 +56,7 @@ pub mod md5_core {
         pub fn digest(&self) -> u128 {
             let preprocessed = Self::preprocess(&self.buffer);
 
-            return Md5::foo(
+            return Md5::calculate_chunks(
                 &preprocessed,
                 0x67452301u32,
                 0xEFCDAB89u32,
@@ -82,7 +82,7 @@ pub mod md5_core {
         pub fn calculate(input: &[u8]) -> u128 {
             let preprocessed = Self::preprocess(input);
 
-            return Md5::foo(
+            return Md5::calculate_chunks(
                 &preprocessed,
                 0x67452301u32,
                 0xEFCDAB89u32,
@@ -91,7 +91,7 @@ pub mod md5_core {
             );
         }
 
-        fn foo(buffer: &[u8], a0: u32, b0: u32, c0: u32, d0: u32) -> u128 {
+        fn calculate_chunks(buffer: &[u8], a0: u32, b0: u32, c0: u32, d0: u32) -> u128 {
             let mut a0 = Wrapping(a0);
             let mut b0 = Wrapping(b0);
             let mut c0 = Wrapping(c0);
