@@ -61,14 +61,10 @@ pub mod md5_core {
 
             while buffer.len() >= 64 {
                 let digested = Md5::calculate_chunks(&buffer[..64], a0, b0, c0, d0);
-                a0 = ((digested >> 96) & 0xffffffff).try_into().unwrap();
-                a0 = a0.to_be();
-                b0 = ((digested >> 64) & 0xffffffff).try_into().unwrap();
-                b0 = b0.to_be();
-                c0 = ((digested >> 32) & 0xffffffff).try_into().unwrap();
-                c0 = c0.to_be();
-                d0 = ((digested >> 00) & 0xffffffff).try_into().unwrap();
-                d0 = d0.to_be();
+                a0 = (((digested >> 96) & 0xffffffff) as u32).to_be();
+                b0 = (((digested >> 64) & 0xffffffff) as u32).to_be();
+                c0 = (((digested >> 32) & 0xffffffff) as u32).to_be();
+                d0 = (((digested >> 00) & 0xffffffff) as u32).to_be();
                 buffer = buffer[64..].to_vec();
             }
 
@@ -219,14 +215,14 @@ pub mod md5_core {
 
         fn u64_to_vector_u8_be(value: u64) -> Vec<u8> {
             let array: [u8; 8] = [
-                (value & 0xff).try_into().unwrap(),
-                ((value >> 8) & 0xff).try_into().unwrap(),
-                ((value >> 16) & 0xff).try_into().unwrap(),
-                ((value >> 24) & 0xff).try_into().unwrap(),
-                ((value >> 32) & 0xff).try_into().unwrap(),
-                ((value >> 40) & 0xff).try_into().unwrap(),
-                ((value >> 48) & 0xff).try_into().unwrap(),
-                ((value >> 56) & 0xff).try_into().unwrap(),
+                ((value >> 00) & 0xff) as u8,
+                ((value >> 08) & 0xff) as u8,
+                ((value >> 16) & 0xff) as u8,
+                ((value >> 24) & 0xff) as u8,
+                ((value >> 32) & 0xff) as u8,
+                ((value >> 40) & 0xff) as u8,
+                ((value >> 48) & 0xff) as u8,
+                ((value >> 56) & 0xff) as u8,
             ];
 
             return array.to_vec();
