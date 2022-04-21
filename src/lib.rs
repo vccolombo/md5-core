@@ -80,76 +80,15 @@ pub mod md5_core {
         /// );
         /// ```
         pub fn calculate(input: &[u8]) -> u128 {
-            let mut a0 = Wrapping(0x67452301u32);
-            let mut b0 = Wrapping(0xEFCDAB89u32);
-            let mut c0 = Wrapping(0x98BADCFEu32);
-            let mut d0 = Wrapping(0x10325476u32);
-
             let preprocessed = Self::preprocess(input);
 
-            for n in (0..preprocessed.len()).step_by(64) {
-                let mut a = a0;
-                let mut b = b0;
-                let mut c = c0;
-                let mut d = d0;
-
-                let chunk = &preprocessed[n..n + 64];
-                let m = [
-                    Self::as_u32_le(&chunk[..4].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[4..8].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[8..12].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[12..16].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[16..20].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[20..24].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[24..28].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[28..32].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[32..36].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[36..40].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[40..44].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[44..48].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[48..52].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[52..56].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[56..60].try_into().unwrap()),
-                    Self::as_u32_le(&chunk[60..64].try_into().unwrap()),
-                ];
-
-                for i in 0..64 {
-                    let mut f;
-                    let g: u32;
-
-                    if i < 16 {
-                        f = (b & c) | (!b & d);
-                        g = i;
-                    } else if i < 32 {
-                        f = (d & b) | (!d & c);
-                        g = (5 * i + 1) % 16;
-                    } else if i < 48 {
-                        f = b ^ c ^ d;
-                        g = (3 * i + 5) % 16;
-                    } else {
-                        f = c ^ (b | !d);
-                        g = (7 * i) % 16;
-                    }
-
-                    f +=
-                        a + Wrapping(m[g as usize]) + Wrapping(Self::PRECOMPUTED_TABLE[i as usize]);
-                    a = d;
-                    d = c;
-                    c = b;
-                    b += Wrapping(u32::rotate_left(f.0, Self::SHIFT_TABLE[i as usize]));
-                }
-
-                a0 += a;
-                b0 += b;
-                c0 += c;
-                d0 += d;
-            }
-
-            return (((a0.0.to_be() as u128) << 96)
-                + ((b0.0.to_be() as u128) << 64)
-                + ((c0.0.to_be() as u128) << 32)
-                + d0.0.to_be() as u128)
-                .into();
+            return Md5::foo(
+                &preprocessed,
+                0x67452301u32,
+                0xEFCDAB89u32,
+                0x98BADCFEu32,
+                0x10325476u32,
+            );
         }
 
         fn foo(buffer: &[u8], a0: u32, b0: u32, c0: u32, d0: u32) -> u128 {
