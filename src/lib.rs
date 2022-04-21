@@ -29,6 +29,9 @@ pub mod md5_core {
             Self { buffer: Vec::new() }
         }
 
+        /// Returns a new Md5 object with the updated state of the md5 calculation
+        /// It means that this function is pure (no mutations)
+        ///
         /// # Example
         ///
         /// ```
