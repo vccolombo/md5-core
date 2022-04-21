@@ -3,6 +3,11 @@ pub mod md5_core {
 
     pub struct Md5 {
         buffer: Vec<u8>,
+        length: u64,
+        a0: u32,
+        b0: u32,
+        c0: u32,
+        d0: u32,
     }
 
     impl Md5 {
@@ -26,7 +31,14 @@ pub mod md5_core {
         ];
 
         pub fn new() -> Self {
-            Self { buffer: Vec::new() }
+            Self {
+                buffer: Vec::new(),
+                length: 0,
+                a0: 0x67452301,
+                b0: 0xEFCDAB89,
+                c0: 0x98BADCFE,
+                d0: 0x10325476,
+            }
         }
 
         /// Returns a new Md5 object with the updated state of the md5 calculation
@@ -41,9 +53,33 @@ pub mod md5_core {
         /// md5 = md5.consume(b"hello");
         /// ```
         pub fn consume(&self, data: &[u8]) -> Self {
-            let buffer = [&self.buffer, data].concat();
+            let mut buffer = [&self.buffer, data].concat();
+            let mut a0 = self.a0;
+            let mut b0 = self.b0;
+            let mut c0 = self.c0;
+            let mut d0 = self.d0;
 
-            Self { buffer }
+            while buffer.len() >= 64 {
+                let digested = Md5::calculate_chunks(&buffer[..64], a0, b0, c0, d0);
+                a0 = ((digested >> 96) & 0xffffffff).try_into().unwrap();
+                a0 = a0.to_be();
+                b0 = ((digested >> 64) & 0xffffffff).try_into().unwrap();
+                b0 = b0.to_be();
+                c0 = ((digested >> 32) & 0xffffffff).try_into().unwrap();
+                c0 = c0.to_be();
+                d0 = ((digested >> 00) & 0xffffffff).try_into().unwrap();
+                d0 = d0.to_be();
+                buffer = buffer[64..].to_vec();
+            }
+
+            Self {
+                buffer,
+                length: self.length + (data.len() as u64),
+                a0,
+                b0,
+                c0,
+                d0,
+            }
         }
 
         /// # Example
@@ -57,15 +93,9 @@ pub mod md5_core {
         /// assert_eq!(md5.digest(), 0xfc5e038d38a57032085441e7fe7010b0);
         /// ```
         pub fn digest(&self) -> u128 {
-            let preprocessed = Self::preprocess(&self.buffer);
+            let preprocessed = Self::preprocess(&self.buffer, self.length * 8);
 
-            return Md5::calculate_chunks(
-                &preprocessed,
-                0x67452301u32,
-                0xEFCDAB89u32,
-                0x98BADCFEu32,
-                0x10325476u32,
-            );
+            return Md5::calculate_chunks(&preprocessed, self.a0, self.b0, self.c0, self.d0);
         }
 
         /// Returns the md5 hash of the input byte array
@@ -83,7 +113,7 @@ pub mod md5_core {
         /// );
         /// ```
         pub fn calculate(input: &[u8]) -> u128 {
-            let preprocessed = Self::preprocess(input);
+            let preprocessed = Self::preprocess(input, (input.len() * 8).try_into().unwrap());
 
             return Md5::calculate_chunks(
                 &preprocessed,
@@ -158,16 +188,15 @@ pub mod md5_core {
                 d0 += d;
             }
 
-            return (((a0.0.to_be() as u128) << 96)
+            return ((a0.0.to_be() as u128) << 96)
                 + ((b0.0.to_be() as u128) << 64)
                 + ((c0.0.to_be() as u128) << 32)
-                + d0.0.to_be() as u128)
-                .into();
+                + d0.0.to_be() as u128;
         }
 
-        fn preprocess(input: &[u8]) -> Vec<u8> {
+        fn preprocess(input: &[u8], original_length_in_bits: u64) -> Vec<u8> {
             let mut preprocessed = input.to_owned();
-            let original_length = preprocessed.len() * 8;
+            let original_length = original_length_in_bits;
 
             let mut n_bytes_to_push = 56 - (preprocessed.len() % 64);
             if n_bytes_to_push <= 0 {
